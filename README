@@ -1,0 +1,1 @@
+[![Build Status](https://travis-ci.org/steppenwolf-sro/callback-schedule.svg?branch=dev)](https://travis-ci.org/steppenwolf-sro/callback-schedule)
