@@ -38,6 +38,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'callback_schedule',
+    'callback_request',
 ]
 
 MIDDLEWARE_CLASSES = [
