@@ -8,16 +8,14 @@ class CallbackManager(models.Model):
     priority = models.IntegerField(default=0)
 
     @staticmethod
-    def get_available_manager(when=None):
+    def get_available_managers(when=None):
         if when is None:
             when = now()
         weekday = when.weekday()
         schedules = CallbackManagerSchedule.objects.filter(
             weekday=weekday, available_from__lte=when.time(), available_till__gte=when.time()
-        ).order_by('-manager__priority')
-        if schedules.exists():
-            return schedules[0].manager
-        return None
+        )
+        return CallbackManager.objects.filter(schedule__in=schedules).distinct().order_by('-priority')
 
 
 class CallbackManagerPhone(models.Model):

@@ -51,13 +51,13 @@ class CallbackTest(APITestCase):
         monday_12_30 = datetime.datetime(2016, 11, 14, 12, 30)
 
         # No manager should be available on Friday 12:00
-        self.assertEqual(CallbackManager.get_available_manager(friday_12), None)
+        self.assertEqual(CallbackManager.get_available_managers(friday_12).count(), 0)
 
         # Manager 2 should be available on Monday 13:00, because he has a greater priority
-        self.assertEqual(CallbackManager.get_available_manager(monday_13).pk, manager_2_pk)
+        self.assertEqual(CallbackManager.get_available_managers(monday_13)[0].pk, manager_2_pk)
 
         # Manager 2 should be available on Monday 15:30, because only he is available at this time
-        self.assertEqual(CallbackManager.get_available_manager(monday_15_30).pk, manager_2_pk)
+        self.assertEqual(CallbackManager.get_available_managers(monday_15_30)[0].pk, manager_2_pk)
 
         # Manager 1 should be available on Monday 12:30, because only he is available at this time
-        self.assertEqual(CallbackManager.get_available_manager(monday_12_30).pk, manager_pk)
+        self.assertEqual(CallbackManager.get_available_managers(monday_12_30)[0].pk, manager_pk)
