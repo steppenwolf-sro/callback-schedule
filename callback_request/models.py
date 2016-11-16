@@ -3,6 +3,8 @@ from uuid import uuid1
 
 from django.conf import settings
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from callback_schedule.models import CallbackManager, CallbackManagerPhone
 
@@ -16,7 +18,7 @@ class CallbackRequest(models.Model):
     completed = models.BooleanField(default=False)
     date = models.DateTimeField(blank=True, null=True)
     immediate = models.BooleanField(default=False)
-    managers = models.ManyToManyField(CallbackManager)
+    phones = models.ManyToManyField(CallbackManagerPhone)
 
     @property
     def right_phone(self):
@@ -24,11 +26,31 @@ class CallbackRequest(models.Model):
 
 
 class CallEntry(models.Model):
-    manager = models.ForeignKey(CallbackManager)
+    STATES = (
+        ('processing', 'Processing'),
+        ('success', 'Success'),
+        ('failed', 'Failed'),
+    )
     created = models.DateTimeField(auto_now_add=True)
     request = models.ForeignKey(CallbackRequest)
-    manager_phone = models.ForeignKey(CallbackManagerPhone)
-    succeeded = models.BooleanField(default=False)
+    attempt = models.IntegerField(default=0)
+    state = models.CharField(max_length=32, choices=STATES, default='processing')
     record_url = models.URLField(blank=True, null=True)
     duration = models.IntegerField(default=0)
     uuid = models.UUIDField(default=uuid1)
+
+    def fail(self):
+        self.state = 'failed'
+        self.save()
+        if self.request.phones.all().count() > self.attempt + 1:
+            CallEntry.objects.create(request=self.request, attempt=self.attempt + 1)
+
+    def success(self):
+        self.state = 'success'
+        self.save()
+
+
+@receiver(post_save, sender=CallbackRequest, dispatch_uid='create_call_entry_on_request')
+def create_callback_entry(sender, instance, created, **kwargs):
+    if created and instance.immediate:
+        CallEntry.objects.create(request=instance)

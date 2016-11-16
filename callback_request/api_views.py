@@ -3,7 +3,7 @@ from rest_framework import permissions
 from rest_framework.generics import CreateAPIView
 
 from callback_request.serializers import CallbackSerializer
-from callback_schedule.models import CallbackManager
+from callback_schedule.models import CallbackManager, CallbackManagerPhone
 
 
 class CreateCallbackRequest(CreateAPIView):
@@ -21,7 +21,7 @@ class CreateCallbackRequest(CreateAPIView):
                 get_user_model().objects.filter(pk=user.pk).update(phone=phone)
 
         if serializer.validated_data['immediate']:
-            managers = CallbackManager.get_available_managers()
+            phones = CallbackManagerPhone.get_available_phones()
         else:
-            managers = []
-        serializer.save(client=user, managers=managers)
+            phones = []
+        serializer.save(client=user, phones=phones)

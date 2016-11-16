@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from callback_request.models import CallbackRequest
-from callback_schedule.models import CallbackManager
+from callback_schedule.models import CallbackManagerPhone
 
 
 class CallbackSerializer(serializers.ModelSerializer):
@@ -15,7 +15,7 @@ class CallbackSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Enter comment')
 
         if immediate:
-            managers = CallbackManager.get_available_managers()
-            if not managers.exists():
+            phones = CallbackManagerPhone.get_available_phones()
+            if not phones.exists():
                 raise serializers.ValidationError('No free managers')
         return data

@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
-from callback_request.models import CallbackRequest
+from callback_request.models import CallbackRequest, CallEntry
 from callback_schedule.models import CallbackManager, CallbackManagerSchedule, CallbackManagerPhone
 
 
@@ -62,6 +62,39 @@ class CallbackRequestTest(APITestCase):
         })
         self.assertEqual(response.status_code, 201)
 
-        self.assertEqual(CallbackRequest.objects.get(pk=response.data['id']).managers.all().count(), 1)
+        self.assertEqual(CallbackRequest.objects.get(pk=response.data['id']).phones.all().count(), 1)
 
-        # self.assertEqual(CallEntry.objects.filter(request__id=response.data['id']).count(), 1)
+    def test_call_entries(self):
+        user = get_user_model().objects.create_user('Manager#1')
+        manager = CallbackManager.objects.create(user=user)
+        today = now()
+        CallbackManagerSchedule.objects.create(manager=manager, weekday=today.weekday(),
+                                               available_from='00:00:00',
+                                               available_till='23:59:59')
+        CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12345')
+        CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12346', priority=1)
+
+        self.client.post('/ru/api/callback/create.json', {
+            'phone': '+1 (234) 56-78-90',
+            'immediate': True,
+        })
+
+        self.assertEqual(1, CallEntry.objects.all().count())
+
+        entry_1 = CallEntry.objects.all()[0]
+        entry_1.fail()
+        self.assertEqual('failed', entry_1.state)
+
+        self.assertEqual(2, CallEntry.objects.all().count())
+        entry_2 = CallEntry.objects.get(state='processing')
+        entry_2.fail()
+        self.assertEqual(2, CallEntry.objects.all().count())
+
+        self.client.post('/ru/api/callback/create.json', {
+            'phone': '+1 (234) 56-78-90',
+            'immediate': True,
+        })
+        self.assertEqual(1, CallEntry.objects.filter(state='processing').count())
+        entry_3 = CallEntry.objects.get(state='processing')
+        entry_3.success()
+        self.assertEqual(0, CallEntry.objects.filter(state='processing').count())

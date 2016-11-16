@@ -3,7 +3,7 @@ import datetime
 from django.contrib.auth.models import User
 from rest_framework.test import APITestCase
 
-from callback_schedule.models import CallbackManager
+from callback_schedule.models import CallbackManager, CallbackManagerPhone
 
 
 class CallbackTest(APITestCase):
@@ -19,6 +19,8 @@ class CallbackTest(APITestCase):
         response = self.client.post('/ru/api/callback/managers.json', {'user': self.admin.pk})
         self.assertEqual(CallbackManager.objects.all().count(), 1)
         manager_pk = response.data['id']
+        CallbackManagerPhone.objects.create(manager=CallbackManager.objects.get(pk=manager_pk), phone_type='test',
+                                            number='123456')
 
         response = self.client.post('/ru/api/callback/managers/{}/schedule.json'.format(manager_pk), {
             'weekday': 0,
@@ -35,8 +37,10 @@ class CallbackTest(APITestCase):
         }])
 
         user = User.objects.create_user('user')
-        response = self.client.post('/ru/api/callback/managers.json', {'user': user.pk, 'priority': 1})
+        response = self.client.post('/ru/api/callback/managers.json', {'user': user.pk})
         manager_2_pk = response.data['id']
+        CallbackManagerPhone.objects.create(manager=CallbackManager.objects.get(pk=manager_2_pk), phone_type='test',
+                                            number='234567', priority=1)
         self.assertEqual(CallbackManager.objects.all().count(), 2)
         response = self.client.post('/ru/api/callback/managers/{}/schedule.json'.format(manager_2_pk), {
             'weekday': 0,
@@ -51,13 +55,13 @@ class CallbackTest(APITestCase):
         monday_12_30 = datetime.datetime(2016, 11, 14, 12, 30)
 
         # No manager should be available on Friday 12:00
-        self.assertEqual(CallbackManager.get_available_managers(friday_12).count(), 0)
+        self.assertEqual(CallbackManagerPhone.get_available_phones(friday_12).count(), 0)
 
         # Manager 2 should be available on Monday 13:00, because he has a greater priority
-        self.assertEqual(CallbackManager.get_available_managers(monday_13)[0].pk, manager_2_pk)
+        self.assertEqual(CallbackManagerPhone.get_available_phones(monday_13)[0].manager.pk, manager_2_pk)
 
         # Manager 2 should be available on Monday 15:30, because only he is available at this time
-        self.assertEqual(CallbackManager.get_available_managers(monday_15_30)[0].pk, manager_2_pk)
+        self.assertEqual(CallbackManagerPhone.get_available_phones(monday_15_30)[0].manager.pk, manager_2_pk)
 
         # Manager 1 should be available on Monday 12:30, because only he is available at this time
-        self.assertEqual(CallbackManager.get_available_managers(monday_12_30)[0].pk, manager_pk)
+        self.assertEqual(CallbackManagerPhone.get_available_phones(monday_12_30)[0].manager.pk, manager_pk)
