@@ -49,8 +49,17 @@ class CallEntry(models.Model):
         self.state = 'success'
         self.save()
 
+    def make_call(self):
+        settings.CALLER_FUNCTION(self)
+
 
 @receiver(post_save, sender=CallbackRequest, dispatch_uid='create_call_entry_on_request')
 def create_callback_entry(sender, instance, created, **kwargs):
     if created and instance.immediate:
         CallEntry.objects.create(request=instance)
+
+
+@receiver(post_save, sender=CallEntry, dispatch_uid='make_call_on_call_entry')
+def make_calls(sender, instance, created, **kwargs):
+    if created:
+        instance.make_call()
