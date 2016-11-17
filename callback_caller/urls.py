@@ -1,6 +1,6 @@
 from django.conf.urls import url
 
-from caller.views import CallbackCall, CallbackCallResult
+from callback_caller.views import CallbackCall, CallbackCallResult
 
 urlpatterns = [
     url(r'^call/(?P<id>[^/]+)/$', CallbackCall.as_view(), name='callback_call'),
