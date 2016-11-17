@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.utils.timezone import now
 from rest_framework.test import APITestCase
@@ -100,3 +102,28 @@ class CallbackRequestTest(APITestCase):
             entry_3 = CallEntry.objects.get(state='processing')
             entry_3.success()
             self.assertEqual(0, CallEntry.objects.filter(state='processing').count())
+
+    def test_nearest_date(self):
+        response = self.client.get('/api/callback/availability.json')
+        self.assertEqual({'available': False, 'nearest': None}, response.data)
+
+        user = get_user_model().objects.create_user('Manager#1')
+        manager = CallbackManager.objects.create(user=user)
+        CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12345')
+
+        today = now().replace(second=0, microsecond=0)
+        print('TODAY', today)
+        CallbackManagerSchedule.objects.create(manager=manager, weekday=(today.weekday() + 1) % 7,
+                                               available_from='12:00:00',
+                                               available_till='15:00:00')
+
+        response = self.client.get('/api/callback/availability.json')
+        self.assertEqual({'available': False,
+                          'nearest': (today.replace(hour=12, minute=0) + timedelta(days=1)).isoformat()[:-6] + 'Z'},
+                         response.data)
+
+        CallbackManagerSchedule.objects.create(manager=manager, weekday=today.weekday(),
+                                               available_from='00:00:00',
+                                               available_till='23:59:59')
+        response = self.client.get('/api/callback/availability.json')
+        self.assertEqual({'available': True}, response.data)

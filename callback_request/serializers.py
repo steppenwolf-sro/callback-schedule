@@ -19,3 +19,8 @@ class CallbackSerializer(serializers.ModelSerializer):
             if not phones.exists():
                 raise serializers.ValidationError('No free managers')
         return data
+
+
+class ManagersAvailabilitySerializer(serializers.Serializer):
+    available = serializers.BooleanField()
+    nearest = serializers.DateTimeField(required=False)
