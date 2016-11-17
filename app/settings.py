@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django_extensions',
     'callback_schedule',
     'callback_request',
-    'caller',
+    'callback_caller',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -123,7 +123,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-CALLER_FUNCTION = 'caller.utils.make_call'
+CALLER_FUNCTION = 'callback_caller.utils.make_call'
 
 TWILIO_ACCOUNT_SID = '***REMOVED***'
 TWILIO_AUTH_TOKEN = '***REMOVED***'

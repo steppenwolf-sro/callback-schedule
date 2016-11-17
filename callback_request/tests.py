@@ -44,7 +44,7 @@ class CallbackRequestTest(APITestCase):
         self.assertEqual(request.right_phone, '+1234567890')
 
     def test_callback_request_now(self):
-        with self.settings(CALLER_FUNCTION='caller.utils.make_stub_call'):
+        with self.settings(CALLER_FUNCTION='callback_caller.utils.make_stub_call'):
             response = self.client.post('/api/callback/create.json', {
                 'phone': '+1 (234) 56-78-90',
                 'immediate': True,
@@ -77,7 +77,7 @@ class CallbackRequestTest(APITestCase):
         CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12345')
         CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12346', priority=1)
 
-        with self.settings(CALLER_FUNCTION='caller.utils.make_stub_call'):
+        with self.settings(CALLER_FUNCTION='callback_caller.utils.make_stub_call'):
             self.client.post('/api/callback/create.json', {
                 'phone': '+1 (234) 56-78-90',
                 'immediate': True,
