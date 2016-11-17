@@ -12,8 +12,6 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 
-from caller import make_call
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
@@ -24,6 +22,8 @@ SECRET_KEY = '=zop61b3v(bap1mcm&e1ol=)*2y@e9+bw2&hc_4s)^7$n)wa%h'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
+SITE_ID = 1
 
 ALLOWED_HOSTS = []
 
@@ -36,10 +36,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 
     'rest_framework',
+    'django_extensions',
     'callback_schedule',
     'callback_request',
+    'caller',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -120,4 +123,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-CALLER_FUNCTION = make_call
+CALLER_FUNCTION = 'caller.utils.make_call'
+
+TWILIO_ACCOUNT_SID = 'AC2b0bb9cd3f5e9f352e8c59fb7f164459'
+TWILIO_AUTH_TOKEN = 'c0e2efe41844d203eb7010fef3fbabaf'
+TWILIO_DEFAULT_FROM = '+79068706253'
