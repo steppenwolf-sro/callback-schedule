@@ -17,7 +17,7 @@ class CallbackRequestTest(APITestCase):
         CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12345')
         CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12346', priority=1)
 
-        with self.settings(CALLER_FUNCTION='caller.utils.make_stub_success_call'):
+        with self.settings(CALLER_FUNCTION='callback_caller.utils.make_stub_success_call'):
             response = self.client.post('/api/callback/create.json', {
                 'phone': '+1 (234) 56-78-90',
                 'immediate': True,
@@ -25,7 +25,7 @@ class CallbackRequestTest(APITestCase):
             request = CallbackRequest.objects.get(pk=response.data['id'])
             self.assertEqual(1, request.callentry_set.filter(state='success').count())
 
-        with self.settings(CALLER_FUNCTION='caller.utils.make_stub_failed_call'):
+        with self.settings(CALLER_FUNCTION='callback_caller.utils.make_stub_failed_call'):
             response = self.client.post('/api/callback/create.json', {
                 'phone': '+1 (234) 56-78-90',
                 'immediate': True,
