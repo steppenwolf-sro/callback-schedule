@@ -8,28 +8,28 @@ from callback_schedule.models import CallbackManager, CallbackManagerSchedule, C
 
 class CallbackRequestTest(APITestCase):
     def test_callback_request_later(self):
-        response = self.client.post('/ru/api/callback/create.json', {
+        response = self.client.post('/api/callback/create.json', {
             'name': 'Test',
             'phone': '+1 (234) 56-78-90',
             'immediate': False,
         })
         self.assertEqual(response.status_code, 400, 'Shouldn\'t succeed without comment')
 
-        response = self.client.post('/ru/api/callback/create.json', {
+        response = self.client.post('/api/callback/create.json', {
             'name': 'Test',
             'comment': 'Anytime',
             'immediate': False,
         })
         self.assertEqual(response.status_code, 400, 'Shouldn\'t succeed without phone')
 
-        response = self.client.post('/ru/api/callback/create.json', {
+        response = self.client.post('/api/callback/create.json', {
             'phone': '+1 (234) 56-78-90',
             'comment': 'Anytime',
             'immediate': False,
         })
         self.assertEqual(response.status_code, 201)
 
-        response = self.client.post('/ru/api/callback/create.json', {
+        response = self.client.post('/api/callback/create.json', {
             'name': 'Test',
             'phone': '+1 (234) 56-78-90',
             'comment': 'Anytime',
@@ -42,27 +42,28 @@ class CallbackRequestTest(APITestCase):
         self.assertEqual(request.right_phone, '+1234567890')
 
     def test_callback_request_now(self):
-        response = self.client.post('/ru/api/callback/create.json', {
-            'phone': '+1 (234) 56-78-90',
-            'immediate': True,
-        })
-        self.assertEqual(response.status_code, 400, 'No free managers, shouldn\'t accept request')
+        with self.settings(CALLER_FUNCTION='caller.utils.make_stub_call'):
+            response = self.client.post('/api/callback/create.json', {
+                'phone': '+1 (234) 56-78-90',
+                'immediate': True,
+            })
+            self.assertEqual(response.status_code, 400, 'No free managers, shouldn\'t accept request')
 
-        user = get_user_model().objects.create_user('Manager#1')
-        manager = CallbackManager.objects.create(user=user)
-        today = now()
-        CallbackManagerSchedule.objects.create(manager=manager, weekday=today.weekday(),
-                                               available_from='00:00:00',
-                                               available_till='23:59:59')
-        CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12345')
+            user = get_user_model().objects.create_user('Manager#1')
+            manager = CallbackManager.objects.create(user=user)
+            today = now()
+            CallbackManagerSchedule.objects.create(manager=manager, weekday=today.weekday(),
+                                                   available_from='00:00:00',
+                                                   available_till='23:59:59')
+            CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12345')
 
-        response = self.client.post('/ru/api/callback/create.json', {
-            'phone': '+1 (234) 56-78-90',
-            'immediate': True,
-        })
-        self.assertEqual(response.status_code, 201)
+            response = self.client.post('/api/callback/create.json', {
+                'phone': '+1 (234) 56-78-90',
+                'immediate': True,
+            })
+            self.assertEqual(response.status_code, 201)
 
-        self.assertEqual(CallbackRequest.objects.get(pk=response.data['id']).phones.all().count(), 1)
+            self.assertEqual(CallbackRequest.objects.get(pk=response.data['id']).phones.all().count(), 1)
 
     def test_call_entries(self):
         user = get_user_model().objects.create_user('Manager#1')
@@ -74,27 +75,28 @@ class CallbackRequestTest(APITestCase):
         CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12345')
         CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12346', priority=1)
 
-        self.client.post('/ru/api/callback/create.json', {
-            'phone': '+1 (234) 56-78-90',
-            'immediate': True,
-        })
+        with self.settings(CALLER_FUNCTION='caller.utils.make_stub_call'):
+            self.client.post('/api/callback/create.json', {
+                'phone': '+1 (234) 56-78-90',
+                'immediate': True,
+            })
 
-        self.assertEqual(1, CallEntry.objects.all().count())
+            self.assertEqual(1, CallEntry.objects.all().count())
 
-        entry_1 = CallEntry.objects.all()[0]
-        entry_1.fail()
-        self.assertEqual('failed', entry_1.state)
+            entry_1 = CallEntry.objects.all()[0]
+            entry_1.fail()
+            self.assertEqual('failed', entry_1.state)
 
-        self.assertEqual(2, CallEntry.objects.all().count())
-        entry_2 = CallEntry.objects.get(state='processing')
-        entry_2.fail()
-        self.assertEqual(2, CallEntry.objects.all().count())
+            self.assertEqual(2, CallEntry.objects.all().count())
+            entry_2 = CallEntry.objects.get(state='processing')
+            entry_2.fail()
+            self.assertEqual(2, CallEntry.objects.all().count())
 
-        self.client.post('/ru/api/callback/create.json', {
-            'phone': '+1 (234) 56-78-90',
-            'immediate': True,
-        })
-        self.assertEqual(1, CallEntry.objects.filter(state='processing').count())
-        entry_3 = CallEntry.objects.get(state='processing')
-        entry_3.success()
-        self.assertEqual(0, CallEntry.objects.filter(state='processing').count())
+            self.client.post('/api/callback/create.json', {
+                'phone': '+1 (234) 56-78-90',
+                'immediate': True,
+            })
+            self.assertEqual(1, CallEntry.objects.filter(state='processing').count())
+            entry_3 = CallEntry.objects.get(state='processing')
+            entry_3.success()
+            self.assertEqual(0, CallEntry.objects.filter(state='processing').count())

@@ -13,23 +13,23 @@ class CallbackTest(APITestCase):
 
     def test_manager_list(self):
         self.client.force_authenticate(user=self.admin)
-        response = self.client.get('/ru/api/callback/managers.json')
+        response = self.client.get('/api/callback/managers.json')
         self.assertEqual(response.data, [])
 
-        response = self.client.post('/ru/api/callback/managers.json', {'user': self.admin.pk})
+        response = self.client.post('/api/callback/managers.json', {'user': self.admin.pk})
         self.assertEqual(CallbackManager.objects.all().count(), 1)
         manager_pk = response.data['id']
         CallbackManagerPhone.objects.create(manager=CallbackManager.objects.get(pk=manager_pk), phone_type='test',
-                                            number='123456')
+                                            number='123456', priority=1)
 
-        response = self.client.post('/ru/api/callback/managers/{}/schedule.json'.format(manager_pk), {
+        response = self.client.post('/api/callback/managers/{}/schedule.json'.format(manager_pk), {
             'weekday': 0,
             'available_from': datetime.time(12, 0),
             'available_till': datetime.time(15, 0),
         })
         self.assertEqual(response.status_code, 201)
 
-        response = self.client.get('/ru/api/callback/managers.json')
+        response = self.client.get('/api/callback/managers.json')
         self.assertEqual(response.data[0]['schedule'], [{
             'weekday': 0,
             'available_from': '12:00:00',
@@ -37,12 +37,12 @@ class CallbackTest(APITestCase):
         }])
 
         user = User.objects.create_user('user')
-        response = self.client.post('/ru/api/callback/managers.json', {'user': user.pk})
+        response = self.client.post('/api/callback/managers.json', {'user': user.pk})
         manager_2_pk = response.data['id']
         CallbackManagerPhone.objects.create(manager=CallbackManager.objects.get(pk=manager_2_pk), phone_type='test',
-                                            number='234567', priority=1)
+                                            number='234567')
         self.assertEqual(CallbackManager.objects.all().count(), 2)
-        response = self.client.post('/ru/api/callback/managers/{}/schedule.json'.format(manager_2_pk), {
+        response = self.client.post('/api/callback/managers/{}/schedule.json'.format(manager_2_pk), {
             'weekday': 0,
             'available_from': datetime.time(13, 0),
             'available_till': datetime.time(16, 0),

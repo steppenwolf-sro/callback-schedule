@@ -6,12 +6,18 @@ from django.utils.timezone import now
 class CallbackManager(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL)
 
+    def __str__(self):
+        return self.user.username
+
 
 class CallbackManagerPhone(models.Model):
     manager = models.ForeignKey(CallbackManager)
     phone_type = models.CharField(max_length=32)
     number = models.CharField(max_length=255)
     priority = models.IntegerField(default=0)
+
+    def __str__(self):
+        return '[{}] {}'.format(self.phone_type, self.number)
 
     @staticmethod
     def get_available_phones(when=None):
@@ -21,7 +27,7 @@ class CallbackManagerPhone(models.Model):
         schedules = CallbackManagerSchedule.objects.filter(
             weekday=weekday, available_from__lte=when.time(), available_till__gte=when.time()
         )
-        return CallbackManagerPhone.objects.filter(manager__schedule__in=schedules).distinct().order_by('-priority')
+        return CallbackManagerPhone.objects.filter(manager__schedule__in=schedules).distinct().order_by('priority')
 
 
 class CallbackManagerSchedule(models.Model):

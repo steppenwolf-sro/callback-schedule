@@ -4,7 +4,6 @@ from rest_framework.test import APITestCase
 
 from callback_request.models import CallbackRequest
 from callback_schedule.models import CallbackManager, CallbackManagerSchedule, CallbackManagerPhone
-from caller import make_stub_success_call, make_stub_failed_call
 
 
 class CallbackRequestTest(APITestCase):
@@ -18,18 +17,18 @@ class CallbackRequestTest(APITestCase):
         CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12345')
         CallbackManagerPhone.objects.create(manager=manager, phone_type='phone', number='+12346', priority=1)
 
-        with self.settings(CALLER_FUNCTION=make_stub_success_call):
-            response = self.client.post('/ru/api/callback/create.json', {
+        with self.settings(CALLER_FUNCTION='caller.utils.make_stub_success_call'):
+            response = self.client.post('/api/callback/create.json', {
                 'phone': '+1 (234) 56-78-90',
                 'immediate': True,
             })
             request = CallbackRequest.objects.get(pk=response.data['id'])
             self.assertEqual(1, request.callentry_set.filter(state='success').count())
 
-        with self.settings(CALLER_FUNCTION=make_stub_failed_call):
-            response = self.client.post('/ru/api/callback/create.json', {
+        with self.settings(CALLER_FUNCTION='caller.utils.make_stub_failed_call'):
+            response = self.client.post('/api/callback/create.json', {
                 'phone': '+1 (234) 56-78-90',
                 'immediate': True,
             })
             request = CallbackRequest.objects.get(pk=response.data['id'])
-            self.assertEqual(1, request.callentry_set.filter(state='failed').count())
+            self.assertEqual(2, request.callentry_set.filter(state='failed').count())
