@@ -26,7 +26,7 @@ class CallbackRequestAdminSerializer(CallbackSerializer):
         model = CallbackRequest
         fields = ('id', 'phone', 'comment', 'client', 'created', 'name', 'completed', 'date', 'right_phone',
                   'immediate')
-        read_only_fields = ('id', 'phone', 'comment', 'created', 'name', 'immediate')
+        read_only_fields = ('id', 'phone', 'comment', 'created', 'name', 'immediate', 'client')
 
 
 class CallEntrySerializer(serializers.ModelSerializer):
