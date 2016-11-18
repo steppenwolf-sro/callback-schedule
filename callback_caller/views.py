@@ -117,7 +117,7 @@ class DirectCallRequest(View):
         phone = callback_request.right_phone
 
         resp = Response()
-        dial = resp.dial(callerId=settings.TWILIO_CALLBACK_NUMBER, record=True)
+        dial = resp.dial(callerId=settings.TWILIO_DEFAULT_FROM, record=True)
         dial.number(phone,
                     statusCallback=get_full_url(reverse('callback_caller:direct_result',
                                                         args=(Signer().sign(entry.pk),))),
