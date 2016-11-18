@@ -13,9 +13,9 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 import os
 
 try:
-    from app.local_settings import *
+    from django_callback_app.local_settings import *
 except ImportError:
-    from app.local_settings_default import *
+    from django_callback_app.local_settings_default import *
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -61,7 +61,7 @@ MIDDLEWARE_CLASSES = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'app.urls'
+ROOT_URLCONF = 'django_callback_app.urls'
 
 TEMPLATES = [
     {

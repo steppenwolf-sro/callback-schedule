@@ -12,7 +12,7 @@ from callback_request.models import CallbackRequest, CallEntry
 from callback_request.serializers import CallbackSerializer, ManagersAvailabilitySerializer, \
     CallbackRequestAdminSerializer, CallEntrySerializer
 from callback_schedule.models import CallbackManagerPhone, CallbackManagerSchedule
-from utils import ProtectedPermission
+from django_callback_app.utils import ProtectedPermission
 
 
 class Pagination(PageNumberPagination):

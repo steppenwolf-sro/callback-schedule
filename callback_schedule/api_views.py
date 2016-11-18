@@ -2,7 +2,7 @@ from rest_framework.generics import ListCreateAPIView
 
 from callback_schedule.models import CallbackManager, CallbackManagerSchedule
 from callback_schedule.serializers import CMSerializer, CMScheduleSerializer
-from utils import ProtectedPermission
+from django_callback_app.utils import ProtectedPermission
 
 
 class CallbackManagerList(ListCreateAPIView):
