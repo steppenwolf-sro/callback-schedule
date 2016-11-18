@@ -112,7 +112,7 @@ class DirectCallRequest(View):
             raise PermissionDenied
 
         callback_request = get_object_or_404(CallbackRequest, pk=request.GET.get('request'))
-        CallEntry.objects.create(manager=manager, state='direct')
+        CallEntry.objects.create(manager=manager, state='direct', request=callback_request)
 
         phone = callback_request.right_phone
 
