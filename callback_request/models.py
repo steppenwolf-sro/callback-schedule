@@ -13,7 +13,7 @@ from callback_schedule.models import CallbackManager, CallbackManagerPhone
 
 
 class CallbackRequest(models.Model):
-    client = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True)
+    client = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='callback_requests')
     created = models.DateTimeField(auto_now_add=True)
     phone = models.CharField(max_length=255)
     name = models.CharField(max_length=255, blank=True, null=True)
