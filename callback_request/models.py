@@ -1,5 +1,4 @@
 import re
-from uuid import uuid1
 
 from django.conf import settings
 from django.core.signing import Signer
