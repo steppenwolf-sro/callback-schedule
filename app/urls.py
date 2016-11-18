@@ -18,7 +18,7 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^api/callback/', include('callback_schedule.api_urls', namespace='callback')),
-    url(r'^api/callback/', include('callback_request.api_urls', namespace='callback')),
+    url(r'^api/callback/', include('callback_schedule.api_urls', namespace='callback_schedule')),
+    url(r'^api/callback/', include('callback_request.api_urls', namespace='callback_request')),
     url(r'^api/callback/', include('callback_caller.urls', namespace='callback_caller')),
 ]
