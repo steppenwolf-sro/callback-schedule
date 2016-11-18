@@ -1,20 +1,33 @@
 from django.conf import settings
 from django.db import models
+from django.utils.timezone import now
 
 
 class CallbackManager(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL)
-    priority = models.IntegerField(default=0)
 
-    @staticmethod
-    def get_available_manager(when=None):
-        raise NotImplementedError
+    def __str__(self):
+        return self.user.username
 
 
 class CallbackManagerPhone(models.Model):
     manager = models.ForeignKey(CallbackManager)
     phone_type = models.CharField(max_length=32)
     number = models.CharField(max_length=255)
+    priority = models.IntegerField(default=0)
+
+    def __str__(self):
+        return '[{}] {}'.format(self.phone_type, self.number)
+
+    @staticmethod
+    def get_available_phones(when=None):
+        if when is None:
+            when = now()
+        weekday = when.weekday()
+        schedules = CallbackManagerSchedule.objects.filter(
+            weekday=weekday, available_from__lte=when.time(), available_till__gte=when.time()
+        )
+        return CallbackManagerPhone.objects.filter(manager__schedule__in=schedules).distinct().order_by('priority')
 
 
 class CallbackManagerSchedule(models.Model):
