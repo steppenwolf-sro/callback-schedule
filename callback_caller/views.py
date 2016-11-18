@@ -135,7 +135,7 @@ class DirectCallResult(View):
         print(request.GET)
         call_entry = get_call_request(CallEntry, **kwargs)
 
-        status = request.GET['DialCallStatus']
+        status = request.GET['CallStatus']
 
         if status == 'completed':
             call_entry.record_url = request.GET.get('RecordingUrl', None)
