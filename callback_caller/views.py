@@ -1,12 +1,18 @@
+from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.core.signing import Signer, BadSignature
+from django.core.urlresolvers import reverse
 from django.http import Http404
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.generic import View
 from twilio.twiml import Response
+from twilio.util import TwilioCapability
 
 from callback_caller.utils import get_full_url
 from callback_request.models import CallEntry, CallbackRequest
+from callback_schedule.models import CallbackManager
 
 
 def get_call_request(model, **kwargs):
@@ -18,6 +24,10 @@ def get_call_request(model, **kwargs):
 
 
 class CallbackCall(View):
+    """
+    View is called by Twilio, when client has answered the phone
+    """
+
     def dispatch(self, request, *args, **kwargs):
         print(request.GET)
         call_request = get_call_request(CallbackRequest, **kwargs)
@@ -35,6 +45,10 @@ class CallbackCall(View):
 
 
 class CallEntryResult(View):
+    """
+    View is called by Twilio, when the call has ended.
+    """
+
     def dispatch(self, request, *args, **kwargs):
         print(request.GET)
         entry = get_call_request(CallEntry, **kwargs)
@@ -60,3 +74,77 @@ class CallEntryResult(View):
         else:
             raise Exception('Wrong status: %s' % status)
         return HttpResponse(str(resp), content_type='text/xml')
+
+
+class TokenRequest(View):
+    """
+    Registers JS client and returns token for logging into twilio JS API
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        account_sid = settings.TWILIO_ACCOUNT_SID
+        auth_token = settings.TWILIO_AUTH_TOKEN
+        application_sid = settings.TWILIO_CALLBACK_APP_SID
+
+        capability = TwilioCapability(account_sid, auth_token)
+        capability.allow_client_outgoing(application_sid)
+        token = capability.generate()
+
+        manager = request.user.callbackmanager
+
+        return JsonResponse({'token': token, 'manager': Signer().sign(manager.pk)})
+
+
+class DirectCallRequest(View):
+    """
+    View is called by Twilio, when manager has made direct call.
+    Manager client app MUST provide params:
+        - manager: manager token, returned by TokenRequest
+        - request: CallRequest ID
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        print(request.GET)
+
+        try:
+            manager = get_object_or_404(CallbackManager, pk=Signer().unsign(request.GET.get('manager', 0)))
+        except (BadSignature, CallbackManager.DoesNotExist):
+            raise PermissionDenied
+
+        callback_request = get_object_or_404(CallbackRequest, pk=request.GET.get('request'))
+        CallEntry.objects.create(manager=manager, state='direct')
+
+        phone = callback_request.right_phone
+
+        resp = Response()
+        dial = resp.dial(callerId=settings.TWILIO_CALLBACK_NUMBER, record=True)
+        dial.number(phone,
+                    statusCallback=get_full_url(reverse('callback_caller:direct_result',
+                                                        args=(Signer().sign(callback_request.pk),))),
+                    statusCallbackMethod='GET')
+
+        return HttpResponse(str(resp), content_type='text/xml')
+
+
+class DirectCallResult(View):
+    """
+    View is called by Twilio, when direct call has ended.
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        print(request.GET)
+        call_entry = get_call_request(CallEntry, **kwargs)
+
+        status = request.GET['DialCallStatus']
+
+        if status == 'completed':
+            call_entry.record_url = request.GET.get('RecordingUrl', None)
+            call_entry.duration = request.GET.get('RecordingDuration', 0)
+            call_entry.success()
+        elif status == 'no-answer':
+            call_entry.state = 'no-answer'
+            call_entry.save()
+        else:
+            raise Exception('Unknown status: {}'.format(status))
+
+        return HttpResponse('OK')

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from callback_request.models import CallbackRequest
+from callback_request.models import CallbackRequest, CallEntry
 from callback_schedule.models import CallbackManagerPhone
 
 
@@ -19,6 +19,20 @@ class CallbackSerializer(serializers.ModelSerializer):
             if not phones.exists():
                 raise serializers.ValidationError('No free managers')
         return data
+
+
+class CallbackRequestAdminSerializer(CallbackSerializer):
+    class Meta:
+        model = CallbackRequest
+        fields = ('id', 'phone', 'comment', 'client', 'created', 'name', 'completed', 'date', 'right_phone',
+                  'immediate')
+        read_only_fields = ('id', 'phone', 'comment', 'created', 'name')
+
+
+class CallEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CallEntry
+        fields = '__all__'
 
 
 class ManagersAvailabilitySerializer(serializers.Serializer):

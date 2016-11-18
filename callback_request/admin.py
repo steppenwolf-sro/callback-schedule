@@ -31,7 +31,6 @@ class CallEntryAdmin(admin.ModelAdmin):
         'state',
         'record_url',
         'duration',
-        'uuid',
     )
     list_filter = ('created', 'request')
 

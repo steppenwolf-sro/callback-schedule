@@ -3,12 +3,20 @@ from django.contrib.auth import get_user_model
 from django.utils.timezone import now
 from rest_framework import permissions
 from rest_framework import status
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from callback_request.serializers import CallbackSerializer, ManagersAvailabilitySerializer
+from callback_request.models import CallbackRequest, CallEntry
+from callback_request.serializers import CallbackSerializer, ManagersAvailabilitySerializer, \
+    CallbackRequestAdminSerializer, CallEntrySerializer
 from callback_schedule.models import CallbackManagerPhone, CallbackManagerSchedule
+from utils import ProtectedPermission
+
+
+class Pagination(PageNumberPagination):
+    page_size = 20
 
 
 class CreateCallbackRequest(CreateAPIView):
@@ -26,6 +34,29 @@ class CreateCallbackRequest(CreateAPIView):
                 get_user_model().objects.filter(pk=user.pk).update(phone=phone)
 
         serializer.save(client=user)
+
+
+class CallbackRequestAdminView(ListAPIView):
+    queryset = CallbackRequest.objects.all().extra(
+        select={'null_date': 'date is null'}
+    ).order_by('completed', '-null_date', 'date', '-created')
+    serializer_class = CallbackRequestAdminSerializer
+    permission_classes = [ProtectedPermission]
+    pagination_class = Pagination
+
+
+class CallbackRequestAdminDetailView(RetrieveUpdateAPIView):
+    serializer_class = CallbackRequestAdminSerializer
+    permission_classes = [ProtectedPermission]
+    queryset = CallbackRequest.objects.all()
+
+
+class CallEntryList(ListAPIView):
+    serializer_class = CallEntrySerializer
+    permission_classes = [ProtectedPermission]
+
+    def get_queryset(self):
+        return CallEntry.objects.filter(request__pk=self.kwargs['pk']).order_by('-created')
 
 
 class ManagersAvailabilityView(APIView):

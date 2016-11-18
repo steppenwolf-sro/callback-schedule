@@ -46,24 +46,22 @@ class CallbackRequest(models.Model):
 class CallEntry(models.Model):
     STATES = (
         ('waiting', 'Waiting'),
+        ('direct', 'Direct'),
         ('canceled', 'Canceled'),
         ('success', 'Success'),
         ('failed', 'Failed'),
+        ('no-answer', 'No answer'),
     )
     created = models.DateTimeField(auto_now_add=True)
     request = models.ForeignKey(CallbackRequest)
     state = models.CharField(max_length=32, choices=STATES, default='waiting')
     record_url = models.URLField(blank=True, null=True)
     duration = models.IntegerField(default=0)
-    uuid = models.UUIDField(default=uuid1)
-    phone = models.ForeignKey(CallbackManagerPhone)
+    phone = models.ForeignKey(CallbackManagerPhone, blank=True, null=True)
+    manager = models.ForeignKey(CallbackManager, blank=True, null=True)
 
     def get_absolute_url(self):
         return reverse('callback_caller:callback_result', args=(Signer().sign(self.pk),))
-
-    @property
-    def manager_phone(self):
-        return self.request.get_phone_at(self.attempt)
 
     def fail(self):
         self.state = 'failed'

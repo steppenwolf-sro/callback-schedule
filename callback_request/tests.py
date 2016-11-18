@@ -9,6 +9,36 @@ from callback_schedule.models import CallbackManager, CallbackManagerSchedule, C
 
 
 class CallbackRequestTest(APITestCase):
+    def test_api_requests_manager(self):
+        response = self.client.post('/api/callback/create.json', {
+            'phone': '+1 (234) 56-78-90',
+            'comment': 'Anytime',
+            'immediate': False,
+        })
+        pk = response.data['id']
+        print('We have created request')
+
+        response = self.client.get('/api/callback/manage/requests.json')
+        self.assertEqual(403, response.status_code)
+        print('> Unauthorized user can\'t get requests list')
+
+        response = self.client.get('/api/callback/manage/requests/{}.json'.format(pk))
+        self.assertEqual(403, response.status_code)
+        print('> Unauthorized user can\'t get request')
+
+        admin = get_user_model().objects.create_superuser('admin', 'admin@example.com', 'test')
+        self.client.force_authenticate(admin)
+        print('Logged in as superuser')
+        response = self.client.get('/api/callback/manage/requests.json')
+        self.assertEqual(200, response.status_code)
+        print('> Admin can get requests list')
+
+        response = self.client.get('/api/callback/manage/requests/{}.json'.format(pk))
+        self.assertEqual(200, response.status_code)
+        print('> Admin can get request')
+
+        self.client.force_authenticate(None)
+
     def test_callback_request_later(self):
         response = self.client.post('/api/callback/create.json', {
             'name': 'Test',
