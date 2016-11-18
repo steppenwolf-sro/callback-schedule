@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.utils.module_loading import import_string
 from rest_framework import serializers
 
 from callback_request.models import CallbackRequest, CallEntry
@@ -22,6 +24,8 @@ class CallbackSerializer(serializers.ModelSerializer):
 
 
 class CallbackRequestAdminSerializer(serializers.ModelSerializer):
+    client = import_string(settings.CALLBACK_CLIENT_SERIALIZER)(read_only=True)
+
     class Meta:
         model = CallbackRequest
         fields = ('id', 'phone', 'comment', 'client', 'created', 'name', 'completed', 'date', 'right_phone',

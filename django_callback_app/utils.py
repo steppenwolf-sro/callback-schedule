@@ -1,4 +1,6 @@
+from django.contrib.auth import get_user_model
 from rest_framework import permissions
+from rest_framework import serializers
 
 
 class ProtectedPermission(permissions.DjangoModelPermissions):
@@ -10,3 +12,9 @@ class ProtectedPermission(permissions.DjangoModelPermissions):
         if request.method == 'OPTIONS':
             return True
         return super().has_permission(request, view)
+
+
+class CallbackUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = 'first_name', 'last_name', 'email', 'id'
