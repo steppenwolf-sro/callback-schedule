@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 
+from app.local_settings import *
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
@@ -124,7 +126,3 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 CALLER_FUNCTION = 'callback_caller.utils.make_call'
-
-TWILIO_ACCOUNT_SID = '***REMOVED***'
-TWILIO_AUTH_TOKEN = '***REMOVED***'
-TWILIO_DEFAULT_FROM = '***REMOVED***'
