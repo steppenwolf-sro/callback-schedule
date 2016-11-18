@@ -15,7 +15,7 @@ def make_call(call_request):
     # TODO: Add status callback
     client.calls.create(client_phone, settings.TWILIO_DEFAULT_FROM, url,
                         status_method='GET', status_callback='',
-                        method='GET', timeout=5)
+                        method='GET', timeout=settings.CALLBACK_CLIENT_CALL_TIMEOUT)
 
 
 def make_stub_success_call(call_request):

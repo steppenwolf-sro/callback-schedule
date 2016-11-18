@@ -64,7 +64,7 @@ class CallEntryResult(View):
             else:
                 dial = resp.dial(callerId=next_entry.request.right_phone,
                                  action=get_full_url(next_entry.get_absolute_url()),
-                                 method='GET', record=True, timeout=5)
+                                 method='GET', record=True, timeout=settings.CALLBACK_MANAGER_CALL_TIMEOUT)
                 dial.number(next_entry.phone.number)
         elif status == 'completed':
             entry.record_url = request.GET.get('RecordingUrl', None)
