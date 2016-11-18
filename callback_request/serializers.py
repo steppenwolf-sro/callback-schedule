@@ -12,7 +12,7 @@ class CallbackSerializer(serializers.ModelSerializer):
         fields = ('id', 'phone', 'name', 'comment', 'immediate')
 
     def validate(self, data):
-        immediate = data['immediate']
+        immediate = data.get('immediate', False)
         if not immediate and not data.get('comment', None):
             raise serializers.ValidationError('Enter comment')
 
