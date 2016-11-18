@@ -21,7 +21,7 @@ class CallbackSerializer(serializers.ModelSerializer):
         return data
 
 
-class CallbackRequestAdminSerializer(CallbackSerializer):
+class CallbackRequestAdminSerializer(serializers.ModelSerializer):
     class Meta:
         model = CallbackRequest
         fields = ('id', 'phone', 'comment', 'client', 'created', 'name', 'completed', 'date', 'right_phone',
