@@ -12,7 +12,10 @@ https://docs.djangoproject.com/en/1.9/ref/settings/
 
 import os
 
-from app.local_settings import *
+try:
+    from app.local_settings import *
+except ImportError:
+    from app.local_settings_default import *
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
