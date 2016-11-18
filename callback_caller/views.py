@@ -112,7 +112,7 @@ class DirectCallRequest(View):
             raise PermissionDenied
 
         callback_request = get_object_or_404(CallbackRequest, pk=request.GET.get('request'))
-        CallEntry.objects.create(manager=manager, state='direct', request=callback_request)
+        entry = CallEntry.objects.create(manager=manager, state='direct', request=callback_request)
 
         phone = callback_request.right_phone
 
@@ -120,7 +120,7 @@ class DirectCallRequest(View):
         dial = resp.dial(callerId=settings.TWILIO_CALLBACK_NUMBER, record=True)
         dial.number(phone,
                     statusCallback=get_full_url(reverse('callback_caller:direct_result',
-                                                        args=(Signer().sign(callback_request.pk),))),
+                                                        args=(Signer().sign(entry.pk),))),
                     statusCallbackMethod='GET')
 
         return HttpResponse(str(resp), content_type='text/xml')
