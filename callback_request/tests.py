@@ -65,7 +65,7 @@ class CallbackRequestTest(APITestCase):
             })
             self.assertEqual(response.status_code, 201)
 
-            self.assertEqual(CallbackRequest.objects.get(pk=response.data['id']).phones.all().count(), 1)
+            self.assertEqual(CallEntry.objects.all().count(), 1)
 
     def test_call_entries(self):
         user = get_user_model().objects.create_user('Manager#1')
@@ -83,14 +83,14 @@ class CallbackRequestTest(APITestCase):
                 'immediate': True,
             })
 
-            self.assertEqual(1, CallEntry.objects.all().count())
+            self.assertEqual(2, CallEntry.objects.all().count())
 
             entry_1 = CallEntry.objects.all()[0]
             entry_1.fail()
             self.assertEqual('failed', entry_1.state)
 
             self.assertEqual(2, CallEntry.objects.all().count())
-            entry_2 = CallEntry.objects.get(state='processing')
+            entry_2 = CallEntry.objects.get(state='waiting')
             entry_2.fail()
             self.assertEqual(2, CallEntry.objects.all().count())
 
@@ -98,8 +98,8 @@ class CallbackRequestTest(APITestCase):
                 'phone': '+1 (234) 56-78-90',
                 'immediate': True,
             })
-            self.assertEqual(1, CallEntry.objects.filter(state='processing').count())
-            entry_3 = CallEntry.objects.get(state='processing')
+            self.assertEqual(2, CallEntry.objects.filter(state='waiting').count())
+            entry_3 = CallEntry.objects.filter(state='waiting')[0]
             entry_3.success()
             self.assertEqual(0, CallEntry.objects.filter(state='processing').count())
 

@@ -31,4 +31,5 @@ class CallbackRequestTest(APITestCase):
                 'immediate': True,
             })
             request = CallbackRequest.objects.get(pk=response.data['id'])
-            self.assertEqual(2, request.callentry_set.filter(state='failed').count())
+            self.assertEqual(1, request.callentry_set.filter(state='failed').count())
+            self.assertEqual(1, request.callentry_set.filter(state='waiting').count())

@@ -18,7 +18,6 @@ class CallbackRequestAdmin(admin.ModelAdmin):
     )
     list_filter = ('client', 'created', 'completed', 'date', 'immediate')
     search_fields = ('name',)
-    readonly_fields = ('phones',)
 
 
 admin.site.register(CallbackRequest, CallbackRequestAdmin)
@@ -29,7 +28,6 @@ class CallEntryAdmin(admin.ModelAdmin):
         'id',
         'created',
         'request',
-        'attempt',
         'state',
         'record_url',
         'duration',

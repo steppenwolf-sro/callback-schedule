@@ -2,6 +2,8 @@ import re
 from uuid import uuid1
 
 from django.conf import settings
+from django.core.signing import Signer
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -19,33 +21,45 @@ class CallbackRequest(models.Model):
     completed = models.BooleanField(default=False)
     date = models.DateTimeField(blank=True, null=True)
     immediate = models.BooleanField(default=False)
-    phones = models.ManyToManyField(CallbackManagerPhone, blank=True)
+
+    def __str__(self):
+        return '#{} [{}]'.format(self.pk, self.created)
 
     @property
     def right_phone(self):
         return '+' + re.sub('[^0-9]', '', self.phone)
 
-    def get_phone_at(self, attempt):
+    def make_call(self):
+        caller = import_string(settings.CALLER_FUNCTION)
+        caller(self)
+
+    def get_absolute_url(self):
+        return reverse('callback_caller:callback_call', args=(Signer().sign(self.pk),))
+
+    def get_entry(self):
         try:
-            return self.phones.all().order_by('priority')[attempt]
+            return self.callentry_set.filter(state='waiting')[0]
         except IndexError:
             return None
 
 
 class CallEntry(models.Model):
     STATES = (
-        ('processing', 'Processing'),
-        ('in-progress', 'In Progress'),
+        ('waiting', 'Waiting'),
+        ('canceled', 'Canceled'),
         ('success', 'Success'),
         ('failed', 'Failed'),
     )
     created = models.DateTimeField(auto_now_add=True)
     request = models.ForeignKey(CallbackRequest)
-    attempt = models.IntegerField(default=0)
-    state = models.CharField(max_length=32, choices=STATES, default='processing')
+    state = models.CharField(max_length=32, choices=STATES, default='waiting')
     record_url = models.URLField(blank=True, null=True)
     duration = models.IntegerField(default=0)
     uuid = models.UUIDField(default=uuid1)
+    phone = models.ForeignKey(CallbackManagerPhone)
+
+    def get_absolute_url(self):
+        return reverse('callback_caller:callback_result', args=(Signer().sign(self.pk),))
 
     @property
     def manager_phone(self):
@@ -54,27 +68,16 @@ class CallEntry(models.Model):
     def fail(self):
         self.state = 'failed'
         self.save()
-        if self.request.phones.all().count() > self.attempt + 1:
-            CallEntry.objects.create(request=self.request, attempt=self.attempt + 1)
 
     def success(self):
         self.state = 'success'
         self.save()
-
-    def make_call(self):
-        caller = import_string(settings.CALLER_FUNCTION)
-        caller(self)
+        CallEntry.objects.filter(request=self.request, pk__gt=self.pk).update(state='canceled')
 
 
 @receiver(post_save, sender=CallbackRequest, dispatch_uid='create_call_entry_on_request')
 def create_callback_entry(sender, instance, created, **kwargs):
     if created and instance.immediate:
         for phone in CallbackManagerPhone.get_available_phones():
-            instance.phones.add(phone)
-        CallEntry.objects.create(request=instance)
-
-
-@receiver(post_save, sender=CallEntry, dispatch_uid='make_call_on_call_entry')
-def make_calls(sender, instance, created, **kwargs):
-    if created:
+            CallEntry.objects.create(request=instance, phone=phone)
         instance.make_call()

@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.core.signing import Signer, BadSignature
 from django.http import Http404
 from django.http import HttpResponse
@@ -6,42 +5,58 @@ from django.shortcuts import get_object_or_404
 from django.views.generic import View
 from twilio.twiml import Response
 
-from callback_request.models import CallEntry
+from callback_caller.utils import get_full_url
+from callback_request.models import CallEntry, CallbackRequest
 
 
-def get_call_entry(**kwargs):
+def get_call_request(model, **kwargs):
     try:
         pk = Signer().unsign(kwargs['id'])
     except BadSignature:
         raise Http404
-    return get_object_or_404(CallEntry, pk=pk)
+    return get_object_or_404(model, pk=pk)
 
 
 class CallbackCall(View):
     def dispatch(self, request, *args, **kwargs):
         print(request.GET)
-        call_entry = get_call_entry(**kwargs)
+        call_request = get_call_request(CallbackRequest, **kwargs)
         resp = Response()
-        resp.say('Соединяю с клиентом, оставайтесь на линии', voice='alice', language='ru-RU')
-        dial = resp.dial(callerId=settings.TWILIO_DEFAULT_FROM)
-        dial.number(call_entry.request.phone)
+        entry = call_request.get_entry()
+        if entry is None:
+            resp.say('Нет свободных менеджеров', voice='alice', language='ru-RU')
+        else:
+            resp.say('Соединяю с менеджером, оставайтесь на линии', voice='alice', language='ru-RU')
+            dial = resp.dial(callerId=call_request.right_phone,
+                             action=get_full_url(entry.get_absolute_url()),
+                             method='GET', record=True, timeout=5)
+            dial.number(entry.phone.number)
         return HttpResponse(str(resp), content_type='text/xml')
 
 
-class CallbackCallResult(View):
+class CallEntryResult(View):
     def dispatch(self, request, *args, **kwargs):
         print(request.GET)
-        call_entry = get_call_entry(**kwargs)
-        call_status = request.GET['CallStatus']
-        if call_status == 'in-progress':
-            call_entry.state = 'in-progress'
-            call_entry.save()
-        elif call_status == 'completed':
-            call_entry.record_url = request.GET.get('RecordingUrl', None)
-            call_entry.duration = request.GET.get('RecordingDuration', 0)
-            call_entry.success()
-        elif call_status == 'no-answer':
-            call_entry.fail()
+        entry = get_call_request(CallEntry, **kwargs)
+
+        status = request.GET['DialCallStatus']
+
+        resp = Response()
+        if status == 'no-answer':
+            entry.fail()
+            next_entry = entry.request.get_entry()
+            if next_entry is None:
+                resp.say('Нет свободных менеджеров', voice='alice', language='ru-RU')
+            else:
+                dial = resp.dial(callerId=next_entry.request.right_phone,
+                                 action=get_full_url(next_entry.get_absolute_url()),
+                                 method='GET', record=True, timeout=5)
+                dial.number(next_entry.phone.number)
+        elif status == 'completed':
+            entry.record_url = request.GET.get('RecordingUrl', None)
+            entry.duration = request.GET.get('RecordingDuration', 0)
+            entry.success()
+            resp.hangup()
         else:
-            raise Exception('Unknown state: ' + call_status)
-        return HttpResponse('ok')
+            raise Exception('Wrong status: %s' % status)
+        return HttpResponse(str(resp), content_type='text/xml')

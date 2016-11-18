@@ -25,11 +25,7 @@ class CreateCallbackRequest(CreateAPIView):
             if phone:
                 get_user_model().objects.filter(pk=user.pk).update(phone=phone)
 
-        if serializer.validated_data['immediate']:
-            phones = CallbackManagerPhone.get_available_phones()
-        else:
-            phones = []
-        serializer.save(client=user, phones=phones)
+        serializer.save(client=user)
 
 
 class ManagersAvailabilityView(APIView):
