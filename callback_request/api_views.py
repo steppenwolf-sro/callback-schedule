@@ -1,4 +1,5 @@
 from dateutil.relativedelta import relativedelta
+from dateutil.rrule import rrule, MINUTELY
 from django.contrib.auth import get_user_model
 from django.utils.timezone import now
 from rest_framework import permissions
@@ -61,6 +62,29 @@ class CallEntryList(ListAPIView):
 
 class ManagersAvailabilityView(APIView):
     @staticmethod
+    def get_real_schedule(start=None):
+        start = start or now().replace(second=0, microsecond=0)
+        result = set()
+        for schedule in CallbackManagerSchedule.objects.all():
+            set_start = start + relativedelta(weekday=schedule.weekday)
+            current = set(
+                rrule(
+                    MINUTELY,
+                    dtstart=set_start.replace(
+                        hour=schedule.available_from.hour,
+                        minute=schedule.available_from.minute
+                    ),
+                    interval=10,
+                    until=set_start.replace(
+                        hour=schedule.available_till.hour,
+                        minute=schedule.available_till.minute
+                    ) - relativedelta(seconds=1)
+                )
+            )
+            result = result.union(current)
+        return sorted([n for n in result if n > start])
+
+    @staticmethod
     def get_nearest_date(start):
         schedules = CallbackManagerSchedule.objects.all()
         if schedules.count() == 0:
@@ -87,5 +111,6 @@ class ManagersAvailabilityView(APIView):
                 'nearest': ManagersAvailabilityView.get_nearest_date(now().replace(second=0, microsecond=0))
             }
 
+        data['schedule'] = self.get_real_schedule()
         serializer = ManagersAvailabilitySerializer(data)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

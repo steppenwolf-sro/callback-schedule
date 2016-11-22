@@ -42,3 +42,4 @@ class CallEntrySerializer(serializers.ModelSerializer):
 class ManagersAvailabilitySerializer(serializers.Serializer):
     available = serializers.BooleanField()
     nearest = serializers.DateTimeField(required=False)
+    schedule = serializers.ListSerializer(child=serializers.DateTimeField())

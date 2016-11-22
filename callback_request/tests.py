@@ -1,9 +1,10 @@
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from django.contrib.auth import get_user_model
 from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
+from callback_request.api_views import ManagersAvailabilityView
 from callback_request.models import CallbackRequest, CallEntry
 from callback_schedule.models import CallbackManager, CallbackManagerSchedule, CallbackManagerPhone
 
@@ -133,9 +134,42 @@ class CallbackRequestTest(APITestCase):
             entry_3.success()
             self.assertEqual(0, CallEntry.objects.filter(state='processing').count())
 
+    def test_real_schedule(self):
+        user = get_user_model().objects.create_user('Manager#1')
+        manager = CallbackManager.objects.create(user=user)
+
+        today = datetime(2016, 11, 23, 12, 0)  # Wednesday
+
+        CallbackManagerSchedule.objects.create(manager=manager, weekday=0,
+                                               available_from='12:00:00', available_till='12:30:00')
+
+        CallbackManagerSchedule.objects.create(manager=manager, weekday=3,
+                                               available_from='13:00:00', available_till='13:30:00')
+
+        CallbackManagerSchedule.objects.create(manager=manager, weekday=3,
+                                               available_from='13:00:00', available_till='13:20:00')
+
+        CallbackManagerSchedule.objects.create(manager=manager, weekday=2,
+                                               available_from='10:00:00', available_till='12:30:00')
+
+        schedule = ManagersAvailabilityView.get_real_schedule(today)
+        self.assertEqual(
+            [
+                datetime(2016, 11, 23, 12, 10),
+                datetime(2016, 11, 23, 12, 20),
+                datetime(2016, 11, 24, 13, 0),
+                datetime(2016, 11, 24, 13, 10),
+                datetime(2016, 11, 24, 13, 20),
+                datetime(2016, 11, 28, 12, 0),
+                datetime(2016, 11, 28, 12, 10),
+                datetime(2016, 11, 28, 12, 20),
+            ],
+            schedule
+        )
+
     def test_nearest_date(self):
         response = self.client.get('/api/callback/availability.json')
-        self.assertEqual({'available': False, 'nearest': None}, response.data)
+        self.assertEqual({'available': False, 'nearest': None, 'schedule': []}, response.data)
 
         user = get_user_model().objects.create_user('Manager#1')
         manager = CallbackManager.objects.create(user=user)
@@ -145,15 +179,20 @@ class CallbackRequestTest(APITestCase):
         print('TODAY', today)
         CallbackManagerSchedule.objects.create(manager=manager, weekday=(today.weekday() + 1) % 7,
                                                available_from='12:00:00',
-                                               available_till='15:00:00')
+                                               available_till='12:30:00')
 
         response = self.client.get('/api/callback/availability.json')
         self.assertEqual({'available': False,
-                          'nearest': (today.replace(hour=12, minute=0) + timedelta(days=1)).isoformat()[:-6] + 'Z'},
+                          'nearest': (today.replace(hour=12, minute=0) + timedelta(days=1)).isoformat()[:-6] + 'Z',
+                          'schedule': [
+                              (today.replace(hour=12, minute=0) + timedelta(days=1)).isoformat()[:-6] + 'Z',
+                              (today.replace(hour=12, minute=10) + timedelta(days=1)).isoformat()[:-6] + 'Z',
+                              (today.replace(hour=12, minute=20) + timedelta(days=1)).isoformat()[:-6] + 'Z',
+                          ]},
                          response.data)
 
         CallbackManagerSchedule.objects.create(manager=manager, weekday=today.weekday(),
                                                available_from='00:00:00',
                                                available_till='23:59:59')
         response = self.client.get('/api/callback/availability.json')
-        self.assertEqual({'available': True}, response.data)
+        self.assertEqual(True, response.data['available'])
