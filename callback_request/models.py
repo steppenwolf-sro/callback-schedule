@@ -56,8 +56,9 @@ class CallEntry(models.Model):
     state = models.CharField(max_length=32, choices=STATES, default='waiting')
     record_url = models.URLField(blank=True, null=True)
     duration = models.IntegerField(default=0)
-    phone = models.ForeignKey(CallbackManagerPhone, blank=True, null=True)
+    phone = models.ForeignKey(CallbackManagerPhone, blank=True, null=True, related_name='used_phones')
     manager = models.ForeignKey(CallbackManager, blank=True, null=True)
+    phones = models.ManyToManyField(CallbackManagerPhone, related_name='phones')
 
     def get_absolute_url(self):
         return reverse('callback_caller:callback_result', args=(Signer().sign(self.pk),))
@@ -75,6 +76,7 @@ class CallEntry(models.Model):
 @receiver(post_save, sender=CallbackRequest, dispatch_uid='create_call_entry_on_request')
 def create_callback_entry(sender, instance, created, **kwargs):
     if created and instance.immediate:
-        for phone in CallbackManagerPhone.get_available_phones():
-            CallEntry.objects.create(request=instance, phone=phone)
+        for phones in CallbackManagerPhone.get_available_phones():
+            entry = CallEntry.objects.create(request=instance)
+            entry.phones.add(*phones)
         instance.make_call()

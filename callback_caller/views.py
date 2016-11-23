@@ -41,10 +41,15 @@ class CallbackCall(View):
             dial = resp.dial(callerId=call_request.right_phone,
                              action=get_full_url(entry.get_absolute_url()),
                              method='GET', record=True, timeout=5)
-            if entry.phone.phone_type == 'sip':
-                dial.sip('sip:' + entry.phone.number)
-            else:
-                dial.number(entry.phone.number)
+
+            # TODO: add statusCallback and statusCallbackMethod
+            # for every request, so we can mark phone who really answered the call
+            # https://www.twilio.com/docs/api/twiml/number#attributes
+            for phone in entry.phones.all():
+                if phone.phone_type == 'sip':
+                    dial.sip('sip:' + phone.number)
+                else:
+                    dial.number(phone.number)
         return HttpResponse(str(resp), content_type='text/xml')
 
 
