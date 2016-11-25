@@ -61,6 +61,8 @@ class CallEntryList(ListAPIView):
 
 
 class ManagersAvailabilityView(APIView):
+    permission_classes = [permissions.AllowAny]
+
     @staticmethod
     def get_real_schedule(start=None):
         start = start or now().replace(second=0, microsecond=0)

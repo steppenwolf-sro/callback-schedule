@@ -35,9 +35,11 @@ class CallbackCall(View):
         resp = Response()
         entry = call_request.get_entry()
         if entry is None:
-            resp.say('Нет свободных менеджеров', voice='alice', language='ru-RU')
+            resp.hangup()
         else:
-            resp.say('Соединяю с менеджером, оставайтесь на линии', voice='alice', language='ru-RU')
+            intro_url = settings.CALLBACK_INTRO_MP3
+            if intro_url is not None:
+                resp.play(intro_url)
             dial = resp.dial(callerId=call_request.right_phone,
                              action=get_full_url(entry.get_absolute_url()),
                              method='GET', record=True, timeout=5)
@@ -69,12 +71,17 @@ class CallEntryResult(View):
             entry.fail()
             next_entry = entry.request.get_entry()
             if next_entry is None:
-                resp.say('Нет свободных менеджеров', voice='alice', language='ru-RU')
+                resp.hangup()
             else:
                 dial = resp.dial(callerId=next_entry.request.right_phone,
                                  action=get_full_url(next_entry.get_absolute_url()),
                                  method='GET', record=True, timeout=settings.CALLBACK_MANAGER_CALL_TIMEOUT)
-                dial.number(next_entry.phone.number)
+                # TODO: refactor repeating
+                for phone in entry.phones.all():
+                    if phone.phone_type == 'sip':
+                        dial.sip('sip:' + phone.number)
+                    else:
+                        dial.number(phone.number)
         elif status == 'completed':
             entry.record_url = request.GET.get('RecordingUrl', None)
             entry.duration = request.GET.get('RecordingDuration', 0)
