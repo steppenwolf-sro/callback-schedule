@@ -157,3 +157,13 @@ class DirectCallResult(View):
             raise Exception('Unknown status: {}'.format(status))
 
         return HttpResponse('OK')
+
+
+class DirectBackCallRequest(View):
+    """
+    Creates call request for now and initiates call to selected manager phone
+    """
+
+    def dispatch(self, request, *args, **kwargs):
+        # TODO: implement
+        return HttpResponse('OK')
