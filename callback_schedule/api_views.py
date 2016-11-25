@@ -1,7 +1,8 @@
-from rest_framework.generics import ListCreateAPIView
+from rest_framework import permissions
+from rest_framework.generics import ListCreateAPIView, ListAPIView
 
-from callback_schedule.models import CallbackManager, CallbackManagerSchedule
-from callback_schedule.serializers import CMSerializer, CMScheduleSerializer
+from callback_schedule.models import CallbackManager, CallbackManagerSchedule, CallbackManagerPhone
+from callback_schedule.serializers import CMSerializer, CMScheduleSerializer, CMPhoneSerializer
 from django_callback_app.utils import ProtectedPermission
 
 
@@ -20,3 +21,11 @@ class ScheduleList(ListCreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save(manager=CallbackManager.objects.get(pk=self.kwargs['pk']))
+
+
+class MyPhoneList(ListAPIView):
+    serializer_class = CMPhoneSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return CallbackManagerPhone.objects.filter(manager__user__pk=self.request.user.pk)

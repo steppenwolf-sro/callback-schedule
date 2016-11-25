@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from callback_schedule.models import CallbackManager, CallbackManagerSchedule
+from callback_schedule.models import CallbackManager, CallbackManagerSchedule, CallbackManagerPhone
 
 
 class CMScheduleSerializer(serializers.ModelSerializer):
@@ -15,3 +15,9 @@ class CMSerializer(serializers.ModelSerializer):
     class Meta:
         model = CallbackManager
         fields = '__all__'
+
+
+class CMPhoneSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CallbackManagerPhone
+        fields = 'id', 'phone_type', 'number', 'priority'

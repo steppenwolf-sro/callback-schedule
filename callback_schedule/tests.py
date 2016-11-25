@@ -11,6 +11,20 @@ class CallbackTest(APITestCase):
     def setUpTestData(cls):
         cls.admin = User.objects.create_superuser('admin', 'admin@example.com', 'test')
 
+    def test_my_phones(self):
+        manager = CallbackManager.objects.create(user=self.admin)
+        ph1 = CallbackManagerPhone.objects.create(manager=manager, phone_type='test', number='000', priority=0)
+        ph2 = CallbackManagerPhone.objects.create(manager=manager, phone_type='test', number='111', priority=1)
+
+        response = self.client.get('/api/callback/manage/my/phones.json')
+        self.assertEqual(403, response.status_code)
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get('/api/callback/manage/my/phones.json')
+        self.assertEqual([
+            {'phone_type': 'test', 'number': '000', 'priority': 0, 'id': ph1.id},
+            {'phone_type': 'test', 'number': '111', 'priority': 1, 'id': ph2.id},
+        ], response.data)
+
     def test_available_phones(self):
         manager = CallbackManager.objects.create(user=self.admin)
         ph1 = CallbackManagerPhone.objects.create(manager=manager, phone_type='test', number='000', priority=0)
