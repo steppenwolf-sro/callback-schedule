@@ -18,7 +18,7 @@ class CallbackSerializer(serializers.ModelSerializer):
 
         if immediate:
             phones = CallbackManagerPhone.get_available_phones()
-            if not phones.exists():
+            if len(phones) == 0:
                 raise serializers.ValidationError('No free managers')
         return data
 

@@ -27,7 +27,15 @@ class CallbackManagerPhone(models.Model):
         schedules = CallbackManagerSchedule.objects.filter(
             weekday=weekday, available_from__lte=when.time(), available_till__gte=when.time()
         )
-        return CallbackManagerPhone.objects.filter(manager__schedule__in=schedules).distinct().order_by('priority')
+        priorities = CallbackManagerPhone.objects.filter(manager__schedule__in=schedules).distinct() \
+            .order_by('priority').values_list('priority', flat=True)
+        result = []
+        for priority in priorities:
+            result.append(CallbackManagerPhone.objects.filter(
+                manager__schedule__in=schedules,
+                priority=priority
+            ).distinct())
+        return result
 
 
 class CallbackManagerSchedule(models.Model):

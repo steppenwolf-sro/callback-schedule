@@ -101,7 +101,7 @@ class ManagersAvailabilityView(APIView):
 
     def get(self, request, *args, **kwargs):
         phones = CallbackManagerPhone.get_available_phones()
-        if phones.count():
+        if len(phones) > 0:
             data = {
                 'available': True
             }
