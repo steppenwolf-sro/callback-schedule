@@ -18,6 +18,7 @@ class CallbackRequestAdmin(admin.ModelAdmin):
     )
     list_filter = ('created', 'completed', 'date', 'immediate')
     search_fields = ('name',)
+    raw_id_fields = ('client',)
 
 
 admin.site.register(CallbackRequest, CallbackRequestAdmin)
