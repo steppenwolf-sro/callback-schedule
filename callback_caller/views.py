@@ -67,7 +67,7 @@ class CallEntryResult(View):
         status = request.GET['DialCallStatus']
 
         resp = Response()
-        if status == 'no-answer':
+        if status in ['no-answer', 'failed']:
             entry.fail()
             next_entry = entry.request.get_entry()
             if next_entry is None:
