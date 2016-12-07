@@ -9,12 +9,12 @@ from callback_schedule.models import CallbackManagerPhone
 class CallbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = CallbackRequest
-        fields = ('id', 'phone', 'name', 'comment', 'immediate')
+        fields = ('id', 'phone', 'name', 'date', 'immediate')
 
     def validate(self, data):
         immediate = data.get('immediate', False)
-        if not immediate and not data.get('comment', None):
-            raise serializers.ValidationError('Enter comment')
+        if not immediate and not data.get('date', None):
+            raise serializers.ValidationError('Enter date')
 
         if immediate:
             phones = CallbackManagerPhone.get_available_phones()
