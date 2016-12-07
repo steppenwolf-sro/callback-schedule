@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.conf import settings
 from django.db import models
 from django.utils.timezone import now
@@ -38,8 +40,17 @@ class CallbackManagerPhone(models.Model):
         return result
 
 
+class CallbackManagerScheduleQueryset(models.QuerySet):
+    def for_date(self, date: 'datetime'):
+        if date < now():
+            return self.none()
+        return self.filter(weekday=date.weekday(), available_from__lte=date.time(), available_till__gte=date.time())
+
+
 class CallbackManagerSchedule(models.Model):
     manager = models.ForeignKey(CallbackManager, related_name='schedule')
     weekday = models.IntegerField()
     available_from = models.TimeField()
     available_till = models.TimeField()
+
+    objects = CallbackManagerScheduleQueryset.as_manager()

@@ -3,7 +3,7 @@ from django.utils.module_loading import import_string
 from rest_framework import serializers
 
 from callback_request.models import CallbackRequest, CallEntry
-from callback_schedule.models import CallbackManagerPhone
+from callback_schedule.models import CallbackManagerPhone, CallbackManagerSchedule
 
 
 class CallbackSerializer(serializers.ModelSerializer):
@@ -15,6 +15,11 @@ class CallbackSerializer(serializers.ModelSerializer):
         immediate = data.get('immediate', False)
         if not immediate and not data.get('date', None):
             raise serializers.ValidationError('Enter date')
+
+        if not immediate:
+            date = data['date']
+            if not CallbackManagerSchedule.objects.for_date(date).exists():
+                raise serializers.ValidationError('No managers are available for this date')
 
         if immediate:
             phones = CallbackManagerPhone.get_available_phones()

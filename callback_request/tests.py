@@ -11,9 +11,15 @@ from callback_schedule.models import CallbackManager, CallbackManagerSchedule, C
 
 class CallbackRequestTest(APITestCase):
     def test_api_requests_manager(self):
+        today = now()
+        user = get_user_model().objects.create_user('Manager#1')
+        manager = CallbackManager.objects.create(user=user)
+        CallbackManagerSchedule.objects.create(manager=manager, weekday=(today + timedelta(days=1)).weekday(),
+                                               available_from="00:00", available_till="23:59")
+
         response = self.client.post('/api/callback/create.json', {
             'phone': '+1 (234) 56-78-90',
-            'comment': 'Anytime',
+            'date': (today + timedelta(days=1)).isoformat(),
             'immediate': False,
         })
         pk = response.data['id']
@@ -41,23 +47,27 @@ class CallbackRequestTest(APITestCase):
         self.client.force_authenticate(None)
 
     def test_callback_request_later(self):
+        today = now()
+        user = get_user_model().objects.create_user('Manager#1')
+        manager = CallbackManager.objects.create(user=user)
+        CallbackManagerSchedule.objects.create(manager=manager, weekday=(today + timedelta(days=1)).weekday(),
+                                               available_from="00:00", available_till="23:59")
         response = self.client.post('/api/callback/create.json', {
             'name': 'Test',
             'phone': '+1 (234) 56-78-90',
             'immediate': False,
         })
-        self.assertEqual(response.status_code, 400, 'Shouldn\'t succeed without comment')
+        self.assertEqual(response.status_code, 400, 'Shouldn\'t succeed without date')
 
         response = self.client.post('/api/callback/create.json', {
             'name': 'Test',
-            'comment': 'Anytime',
             'immediate': False,
         })
         self.assertEqual(response.status_code, 400, 'Shouldn\'t succeed without phone')
 
         response = self.client.post('/api/callback/create.json', {
             'phone': '+1 (234) 56-78-90',
-            'comment': 'Anytime',
+            'date': (today + timedelta(days=1)).isoformat(),
             'immediate': False,
         })
         self.assertEqual(response.status_code, 201)
@@ -65,7 +75,7 @@ class CallbackRequestTest(APITestCase):
         response = self.client.post('/api/callback/create.json', {
             'name': 'Test',
             'phone': '+1 (234) 56-78-90',
-            'comment': 'Anytime',
+            'date': (today + timedelta(days=1)).isoformat(),
             'immediate': False,
         })
         self.assertEqual(response.status_code, 201)
