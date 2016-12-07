@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.generics import CreateAPIView, ListAPIView, RetrieveUpdateAPIView
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from callback_request.models import CallbackRequest, CallEntry
@@ -20,9 +21,14 @@ class Pagination(PageNumberPagination):
     page_size = 20
 
 
+class CreateCallbackThrottle(UserRateThrottle):
+    rate = '1/second'
+
+
 class CreateCallbackRequest(CreateAPIView):
     serializer_class = CallbackSerializer
     permission_classes = [permissions.AllowAny]
+    throttle_classes = (CreateCallbackThrottle,)
 
     def perform_create(self, serializer):
         user = self.request.user if self.request.user.is_authenticated() else None

@@ -2,12 +2,14 @@ from django.contrib.auth import get_user_model
 from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
+from callback_request.api_views import CreateCallbackThrottle
 from callback_request.models import CallbackRequest
 from callback_schedule.models import CallbackManager, CallbackManagerSchedule, CallbackManagerPhone
 
 
 class CallbackRequestTest(APITestCase):
     def test_caller(self):
+        CreateCallbackThrottle.rate = '100/second'
         user = get_user_model().objects.create_user('Manager#1')
         manager = CallbackManager.objects.create(user=user)
         today = now()

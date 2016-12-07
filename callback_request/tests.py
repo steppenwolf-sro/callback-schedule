@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.utils.timezone import now
 from rest_framework.test import APITestCase
 
-from callback_request.api_views import ManagersAvailabilityView
+from callback_request.api_views import ManagersAvailabilityView, CreateCallbackThrottle
 from callback_request.models import CallbackRequest, CallEntry
 from callback_schedule.models import CallbackManager, CallbackManagerSchedule, CallbackManagerPhone
 
@@ -85,6 +85,7 @@ class CallbackRequestTest(APITestCase):
         self.assertEqual(request.right_phone, '+1234567890')
 
     def test_callback_request_now(self):
+        CreateCallbackThrottle.rate = '100/second'
         with self.settings(CALLER_FUNCTION='callback_caller.utils.make_stub_call'):
             response = self.client.post('/api/callback/create.json', {
                 'phone': '+1 (234) 56-78-90',
