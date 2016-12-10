@@ -3,3 +3,4 @@ djangorestframework==3.5.3
 twilio
 django_extensions
 python-dateutil
+requests

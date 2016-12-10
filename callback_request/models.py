@@ -16,7 +16,7 @@ class CallbackRequest(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     phone = models.CharField(max_length=255)
     name = models.CharField(max_length=255, blank=True, null=True)
-    comment = models.TextField(blank=True, null=True)
+    comment = models.TextField(blank=True)
     completed = models.BooleanField(default=False)
     date = models.DateTimeField(blank=True, null=True)
     immediate = models.BooleanField(default=False)
@@ -40,6 +40,14 @@ class CallbackRequest(models.Model):
             return self.callentry_set.filter(state='waiting')[0]
         except IndexError:
             return None
+
+    def get_client_callback_url(self):
+        return reverse('callback_caller:callback_client_callback', args=(Signer().sign(self.pk),))
+
+    def client_not_answered(self):
+        self.completed = True
+        self.save()
+        self.callentry_set.all().update(state='no-answer')
 
 
 class CallEntry(models.Model):

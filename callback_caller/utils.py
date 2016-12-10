@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.sites.models import Site
-from twilio.rest import TwilioRestClient
+
+from callback_caller.clients import RestClientVoximplant
 
 
 def get_full_url(url):
@@ -8,14 +9,12 @@ def get_full_url(url):
 
 
 def make_call(call_request):
-    client = TwilioRestClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+    client = RestClientVoximplant()
     url = get_full_url(call_request.get_absolute_url())
     client_phone = call_request.right_phone
 
-    # TODO: Add status callback
-    client.calls.create(client_phone, settings.TWILIO_DEFAULT_FROM, url,
-                        status_method='GET', status_callback='',
-                        method='GET', timeout=settings.CALLBACK_CLIENT_CALL_TIMEOUT)
+    client.create_call(client_phone=client_phone, url=url,
+                       status_callback=get_full_url(call_request.get_client_callback_url()))
 
 
 def make_stub_success_call(call_request):
