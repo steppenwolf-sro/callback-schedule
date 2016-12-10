@@ -33,8 +33,8 @@ class RestClientVoximplant(RestClient):
                          'api_key': settings.VOXIMPLANT_API_KEY,
                          'rule_id': settings.VOXIMPLANT_RULE_ID,
                          'script_custom_data': "|".join(
-                             (kwargs['client_phone'].strip('+'),
-                              settings.TWILIO_DEFAULT_FROM.strip('+'),
+                             (kwargs['client_phone'],
+                              settings.TWILIO_DEFAULT_FROM,
                               kwargs['url'],
                               kwargs['status_callback'],
                               str(settings.CALLBACK_CLIENT_CALL_TIMEOUT))

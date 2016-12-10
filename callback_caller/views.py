@@ -75,6 +75,8 @@ class ClientStatusCallback(View):
 
         if status in ['no-answer', 'failed']:
             call_request.client_not_answered()
+        elif status == 'wrong-number':
+            call_request.wrong_number()
         return HttpResponse('OK')
 
 

@@ -24,6 +24,12 @@ function handleScenarioStart() {
     clientStatusCallback = data[3];
     var timeout = parseInt(data[4]) * 1000;
 
+    Logger.write(JSON.stringify(PhoneNumber.getInfo(clientPhone)));
+    if (!PhoneNumber.getInfo(clientPhone).isValidNumber) {
+        terminateCall("wrong-number");
+        return;
+    }
+
     Logger.write(url);
     Logger.write(fromPhone);
 
@@ -39,13 +45,16 @@ function handleScenarioStart() {
     callToClient.addEventListener(CallEvents.VoicemailPromptDetected, clientDidNotAnswer);
 }
 
-function clientDidNotAnswer() {
-    Logger.write("Client did not answer");
-    Net.httpRequestAsync(clientStatusCallback + "?DialCallStatus=failed")
+function terminateCall(reason) {
+    Net.httpRequestAsync(clientStatusCallback + "?DialCallStatus=" + reason)
         .then(function (response) {
-            Logger.write("Server notified. Terminating the call.");
+            Logger.write("Server notified: " + reason + ". Terminating the call.");
             VoxEngine.terminate();
         });
+}
+
+function clientDidNotAnswer() {
+    terminateCall("failed");
 }
 
 function handleCallToClientConnected() {

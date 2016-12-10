@@ -12,6 +12,10 @@ from callback_schedule.models import CallbackManager, CallbackManagerPhone
 
 
 class CallbackRequest(models.Model):
+    ERRORS = (
+        ('no-answer', 'Client did not answer'),
+        ('wrong-number', 'Wrong phone number'),
+    )
     client = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='callback_requests')
     created = models.DateTimeField(auto_now_add=True)
     phone = models.CharField(max_length=255)
@@ -20,6 +24,7 @@ class CallbackRequest(models.Model):
     completed = models.BooleanField(default=False)
     date = models.DateTimeField(blank=True, null=True)
     immediate = models.BooleanField(default=False)
+    error = models.CharField(max_length=32, blank=True, choices=ERRORS)
 
     def __str__(self):
         return '#{} [{}]'.format(self.pk, self.created)
@@ -46,8 +51,15 @@ class CallbackRequest(models.Model):
 
     def client_not_answered(self):
         self.completed = True
+        self.error = 'no-answer'
         self.save()
-        self.callentry_set.all().update(state='no-answer')
+        self.callentry_set.all().update(state='canceled')
+
+    def wrong_number(self):
+        self.completed = True
+        self.error = 'wrong-number'
+        self.save()
+        self.callentry_set.all().update(state='canceled')
 
 
 class CallEntry(models.Model):

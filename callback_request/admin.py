@@ -15,6 +15,7 @@ class CallbackRequestAdmin(admin.ModelAdmin):
         'completed',
         'date',
         'immediate',
+        'error',
     )
     list_filter = ('created', 'completed', 'date', 'immediate')
     search_fields = ('name',)
