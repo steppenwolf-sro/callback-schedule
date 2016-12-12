@@ -90,6 +90,8 @@ class CallEntry(models.Model):
     def success(self):
         self.state = 'success'
         self.save()
+        self.request.completed = True
+        self.request.save()
         CallEntry.objects.filter(request=self.request, pk__gt=self.pk).update(state='canceled')
 
 
