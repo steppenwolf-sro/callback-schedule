@@ -8,6 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils.module_loading import import_string
 
+from callback_request.tasks import delayed_request
 from callback_schedule.models import CallbackManager, CallbackManagerPhone
 
 
@@ -15,6 +16,7 @@ class CallbackRequest(models.Model):
     ERRORS = (
         ('no-answer', 'Client did not answer'),
         ('wrong-number', 'Wrong phone number'),
+        ('no-manager', 'No free manager'),
     )
     client = models.ForeignKey(settings.AUTH_USER_MODEL, blank=True, null=True, related_name='callback_requests')
     created = models.DateTimeField(auto_now_add=True)
@@ -34,6 +36,10 @@ class CallbackRequest(models.Model):
         return '+' + re.sub('[^0-9]', '', self.phone)
 
     def make_call(self):
+        if self.get_entry() is None:
+            self.error = 'no-manager'
+            self.save()
+            return
         caller = import_string(settings.CALLER_FUNCTION)
         caller(self)
 
@@ -97,8 +103,12 @@ class CallEntry(models.Model):
 
 @receiver(post_save, sender=CallbackRequest, dispatch_uid='create_call_entry_on_request')
 def create_callback_entry(sender, instance, created, **kwargs):
-    if created and instance.immediate:
+    if not created:
+        return
+    if instance.immediate:
         for phones in CallbackManagerPhone.get_available_phones():
             entry = CallEntry.objects.create(request=instance)
             entry.phones.add(*phones)
         instance.make_call()
+    else:
+        delayed_request.apply_async((instance.pk,), eta=instance.date)
