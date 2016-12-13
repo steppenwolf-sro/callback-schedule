@@ -67,6 +67,12 @@ class CallbackRequest(models.Model):
         self.save()
         self.callentry_set.all().update(state='canceled')
 
+    def process(self):
+        for phones in CallbackManagerPhone.get_available_phones():
+            entry = CallEntry.objects.create(request=self)
+            entry.phones.add(*phones)
+        self.make_call()
+
 
 class CallEntry(models.Model):
     STATES = (
@@ -106,9 +112,6 @@ def create_callback_entry(sender, instance, created, **kwargs):
     if not created:
         return
     if instance.immediate:
-        for phones in CallbackManagerPhone.get_available_phones():
-            entry = CallEntry.objects.create(request=instance)
-            entry.phones.add(*phones)
-        instance.make_call()
-    else:
+        instance.process()
+    elif settings.CALLBACK_PROCESS_DELAYED:
         delayed_request.apply_async((instance.pk,), eta=instance.date)

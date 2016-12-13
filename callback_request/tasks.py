@@ -7,5 +7,6 @@ def delayed_request(request_id):
 
     callback_request = CallbackRequest.objects.get(pk=request_id)
     if callback_request.completed or callback_request.error:
-        return
-    callback_request.make_call()
+        return False
+    callback_request.process()
+    return True
