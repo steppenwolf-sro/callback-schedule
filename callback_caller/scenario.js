@@ -134,6 +134,8 @@ function managerDidNotAnswer(data) {
         var item = callsToManagers[i];
         Logger.write(item.number() + " - " + item.state());
     }
+
+    // TODO: if no PROGRESSING phones left, cancel managerUnavailableTimeout and call managersUnavailable
 }
 
 function managerDidAnswer(data) {
