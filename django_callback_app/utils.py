@@ -3,7 +3,7 @@ from rest_framework import permissions
 from rest_framework import serializers
 
 
-class ProtectedPermission(permissions.DjangoModelPermissions):
+class ProtectedPermission(permissions.DjangoModelPermissionsOrAnonReadOnly):
     perms_map = {
         'GET': ['%(app_label)s.change_%(model_name)s'],
         'OPTIONS': [],
