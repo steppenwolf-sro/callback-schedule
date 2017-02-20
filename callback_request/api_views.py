@@ -44,12 +44,22 @@ class CreateCallbackRequest(CreateAPIView):
 
 
 class CallbackRequestAdminView(ListAPIView):
-    queryset = CallbackRequest.objects.all().extra(
-        select={'null_date': 'date is null'}
-    ).order_by('completed', '-null_date', 'date', '-created')
     serializer_class = CallbackRequestAdminSerializer
     permission_classes = [ProtectedPermission]
     pagination_class = Pagination
+
+    def get_queryset(self):
+        orders = {
+            '-created': ('-created', '-date'),
+            'created': ('created', 'date'),
+            '-date': ('-date', '-created'),
+            'date': ('date', 'created'),
+            None: ('completed', '-null_date', '-date', '-created'),
+        }
+        order = orders.get(self.request.GET.get('order'), orders[None])
+        return CallbackRequest.objects.all().extra(
+            select={'null_date': 'date is null'}
+        ).order_by(*order)
 
 
 class CallbackRequestAdminDetailView(RetrieveUpdateAPIView):
